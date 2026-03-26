@@ -1,0 +1,17 @@
+{
+  "name": "d2r-traderie-pricer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "app": "node src/server.mjs",
+    "build:pages": "node scripts/build-pages.mjs",
+    "login": "node src/index.mjs login",
+    "scrape": "node src/index.mjs scrape",
+    "import": "node src/index.mjs import",
+    "recommend": "node src/index.mjs recommend sample-item.json"
+  },
+  "dependencies": {
+    "playwright": "^1.53.0"
+  }
+}

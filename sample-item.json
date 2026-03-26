@@ -1,0 +1,8 @@
+{
+  "name": "griffon's eye",
+  "options": {
+    "lightning_skill_damage": "+20%",
+    "enemy_lightning_resistance": "-15%",
+    "socket": "socket"
+  }
+}

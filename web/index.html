@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>디아블로 2 레저렉션 Traderie 최근 거래 시세 보기</title>
+    <meta
+      name="description"
+      content="디아블로 2 레저렉션 Traderie 최근 거래 파일을 업로드하면 변동 옵션과 수량이 비슷한 거래를 비교해 등록가를 빠르게 가늠할 수 있는 시세 확인 도우미입니다."
+    />
+    <meta
+      name="keywords"
+      content="디아블로 2 레저렉션 시세, 디아블로 2 Traderie, 디아블로 2 아이템 시세, 디아블로 2 최근 거래, 디아블로 2 룬 시세, 디아블로 2 거래소"
+    />
+    <meta property="og:title" content="디아블로 2 레저렉션 Traderie 최근 거래 시세 보기" />
+    <meta
+      property="og:description"
+      content="Traderie 최근 거래 파일을 업로드하면 변동 옵션과 수량이 비슷한 거래를 비교해 등록가를 빠르게 가늠할 수 있는 시세 확인 도우미"
+    />
+    <meta property="og:type" content="website" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">Diablo 2 Resurrected Price Helper</p>
+        <h1>디아블로 2 레저렉션 Traderie 시세 보기</h1>
+        <p class="lead">
+          Traderie 최근 거래 파일을 업로드하면 아이템 이름과 변동 옵션이 자동으로 정리됩니다.
+          필요한 값만 입력하면 조건이 비슷한 거래를 모아 보고, 지금 올릴 만한 가격 범위도 빠르게 확인할 수 있습니다.
+        </p>
+        <div class="hero-points">
+          <div class="chip">변동 옵션만 자동 추려서 입력</div>
+          <div class="chip">수량이 비슷한 묶음 거래 우선 비교</div>
+          <div class="chip">OR 제안 포함 최근 거래 함께 확인</div>
+        </div>
+      </section>
+
+      <section class="spotlight">
+        <article class="spot-card">
+          <h2>이런 분들께 맞아요</h2>
+          <p>아이템을 올리기 전에 최근 거래 기준으로 어느 정도 가격에 등록할지 빠르게 판단하고 싶은 분께 잘 맞습니다.</p>
+        </article>
+        <article class="spot-card">
+          <h2>어떻게 찾나요</h2>
+          <p>업로드한 최근 거래 전체를 읽은 뒤, 이름과 변동 옵션, 수량이 비슷한 거래를 먼저 정렬해 보여줍니다.</p>
+        </article>
+        <article class="spot-card">
+          <h2>특히 잘 맞는 케이스</h2>
+          <p>변동 옵션 비교, 수량 묶음 판매 비교, OR 제안이 섞인 거래 확인처럼 직접 하나씩 보기 번거로운 경우에 특히 편합니다.</p>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>1. 수집 스크립트 복사</h2>
+          <button id="copy-script" class="button">스크립트 복사</button>
+        </div>
+        <p class="muted">
+          Traderie에서 원하는 아이템의 `Recent Trades` 페이지를 연 뒤, 개발자도구 `Console`에 붙여넣고 실행하세요.
+        </p>
+        <textarea id="script-output" class="codebox" readonly></textarea>
+      </section>
+
+      <section class="panel grid">
+        <div>
+          <h2>2. 내 아이템 정보 입력</h2>
+          <div class="label">아이템 이름</div>
+          <div id="item-name" class="input readonly-field muted">JSON 업로드 후 자동으로 표시됩니다</div>
+
+          <div class="panel-note muted">파일을 업로드하면 변동 옵션만 자동으로 나타나고, 숫자 옵션은 바로 입력해서 비교할 수 있습니다.</div>
+          <div id="item-options" class="option-fields"></div>
+        </div>
+
+        <div>
+          <h2>3. 다운로드한 JSON 업로드</h2>
+          <label class="upload">
+            <input id="json-file" type="file" accept=".json,application/json" />
+            <span>파일 선택</span>
+          </label>
+          <p id="file-name" class="muted">아직 업로드한 파일이 없습니다.</p>
+          <button id="run-analysis" class="button primary">결과 보기</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>결과</h2>
+        <div id="status" class="status">파일을 업로드하면 결과가 여기에 표시됩니다.</div>
+        <div id="summary" class="summary hidden"></div>
+        <div id="matches" class="matches hidden"></div>
+      </section>
+
+      <section class="panel">
+        <h2>자주 묻는 질문</h2>
+        <div class="faq-list">
+          <div>
+            <strong>Q. 디아블로 2 레저렉션 한국 유저도 바로 쓸 수 있나요?</strong>
+            <p class="muted">네. 옵션명이 한국어로 표시되고, 변동 옵션만 자동으로 남겨서 바로 입력할 수 있습니다.</p>
+          </div>
+          <div>
+            <strong>Q. 변동 옵션 비교도 되나요?</strong>
+            <p class="muted">네. 방어력, 방어력 증가 같은 값을 입력하면 조건이 비슷한 거래가 먼저 올라옵니다.</p>
+          </div>
+          <div>
+            <strong>Q. 수량 묶음 판매도 비교되나요?</strong>
+            <p class="muted">네. 수량 값을 넣으면 내가 찾는 개수와 가장 가까운 묶음 거래부터 먼저 보여줍니다.</p>
+          </div>
+          <div>
+            <strong>Q. OR 가격 제안도 같이 볼 수 있나요?</strong>
+            <p class="muted">네. 대체 제안이 있는 거래도 함께 읽어서 어떤 가격 조합이 나오는지 한눈에 비교할 수 있습니다.</p>
+          </div>
+          <div>
+            <strong>Q. 로그인 우회 도구인가요?</strong>
+            <p class="muted">아니요. 본인이 로그인한 Traderie 페이지에서 직접 데이터를 내려받아 확인하는 로컬 도우미입니다.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+  </html>
