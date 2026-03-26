@@ -116,6 +116,10 @@ h2 {
   box-shadow: var(--shadow-soft);
 }
 
+.spot-card p {
+  margin-bottom: 0;
+}
+
 .panel-head {
   display: flex;
   align-items: center;
