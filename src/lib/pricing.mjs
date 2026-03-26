@@ -622,6 +622,10 @@ function doesOptionMatchTrade(key, expectedText, trade, haystack) {
 function normalizeOptionLookupKey(key) {
   const normalized = String(key || "").trim().toLowerCase();
   const aliases = {
+    "모든 저항": "plus_x_to_all_resistances",
+    "모든 기술": "plus_x_to_all_skills",
+    "모든 능력치": "plus_x_to_all_attributes",
+    "경험치 획득": "plus_x_percent_to_experience_gained",
     "추가 방어력": "plus_x_defense",
     "방어력 증가": "plus_x_percent_enhanced_defense",
     "시전 속도 증가": "plus_x_percent_faster_cast_rate",
