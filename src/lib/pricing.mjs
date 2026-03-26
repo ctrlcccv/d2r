@@ -575,10 +575,13 @@ function scoreTradeSimilarity(item, trade) {
   const haystack = `${trade.itemText} ${trade.context.join(" ")}`.toLowerCase();
   let total = 0;
   const matched = [];
+  const mismatched = [];
   const tradeQuantity = extractTradeQuantity(trade);
+  let matchedOptionCount = 0;
+  let mismatchedOptionCount = 0;
 
   if (item.name && haystack.includes(String(item.name).toLowerCase())) {
-    total += 50;
+    total += 40;
     matched.push(`name:${item.name}`);
   }
 
@@ -590,9 +593,18 @@ function scoreTradeSimilarity(item, trade) {
     if (!expectedText.trim()) {
       continue;
     }
-    if (doesOptionMatchTrade(key, expectedText, trade, haystack)) {
-      total += 10;
+    const matchState = getOptionMatchState(key, expectedText, trade, haystack);
+    if (matchState === "match") {
+      total += 18;
+      matchedOptionCount += 1;
       matched.push(`${key}:${expected}`);
+      continue;
+    }
+
+    if (matchState === "mismatch") {
+      total -= 8;
+      mismatchedOptionCount += 1;
+      mismatched.push(`${key}:${expected}`);
     }
   }
 
@@ -601,22 +613,22 @@ function scoreTradeSimilarity(item, trade) {
     ? Math.abs(tradeQuantity - requestedQuantity)
     : null;
 
-  return { total, matched, tradeQuantity, quantityDiff };
+  return { total, matched, mismatched, matchedOptionCount, mismatchedOptionCount, tradeQuantity, quantityDiff };
 }
 
-function doesOptionMatchTrade(key, expectedText, trade, haystack) {
+function getOptionMatchState(key, expectedText, trade, haystack) {
   const normalizedKey = normalizeOptionLookupKey(key);
   const observedValues = collectObservedTradeValues([trade], normalizedKey);
   if (observedValues.size > 0) {
     const normalizedExpected = normalizeObservedValue(expectedText);
-    return Array.from(observedValues).some((value) => value === normalizedExpected);
+    return Array.from(observedValues).some((value) => value === normalizedExpected) ? "match" : "mismatch";
   }
 
   if (/^\d+$/.test(String(expectedText).trim())) {
-    return false;
+    return "unknown";
   }
 
-  return haystack.includes(expectedText.toLowerCase());
+  return haystack.includes(expectedText.toLowerCase()) ? "match" : "unknown";
 }
 
 function normalizeOptionLookupKey(key) {
@@ -658,6 +670,14 @@ function compareTradeScores(a, b, requestedQuantity) {
     if (diffA !== diffB) {
       return diffA - diffB;
     }
+  }
+
+  if (a.score.matchedOptionCount !== b.score.matchedOptionCount) {
+    return b.score.matchedOptionCount - a.score.matchedOptionCount;
+  }
+
+  if (a.score.mismatchedOptionCount !== b.score.mismatchedOptionCount) {
+    return a.score.mismatchedOptionCount - b.score.mismatchedOptionCount;
   }
 
   return b.score.total - a.score.total;
