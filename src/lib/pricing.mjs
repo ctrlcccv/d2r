@@ -86,7 +86,7 @@ export function extractItemTemplate(exportedPage) {
   const itemName = inferItemName(exportedPage, lines);
   const allLabels = extractStatLabels(lines);
   const trades = parseTradesFromText(text);
-  const labels = inferVariableStatLabels(lines, allLabels, trades);
+  const labels = sortTemplateLabels(itemName, inferVariableStatLabels(lines, allLabels, trades));
   const options = { 수량: "" };
 
   for (const label of labels) {
@@ -205,6 +205,34 @@ function inferVariableStatLabels(lines, labels, trades) {
   }
 
   return variableLabels;
+}
+
+function sortTemplateLabels(itemName, labels) {
+  const normalizedName = String(itemName || "").trim().toLowerCase();
+  const orderMap = new Map();
+
+  if (normalizedName === "어나이얼러스") {
+    [
+      "plus_x_to_all_skills",
+      "plus_x_to_all_attributes",
+      "plus_x_to_all_resistances",
+      "plus_x_percent_to_experience_gained"
+    ].forEach((key, index) => {
+      orderMap.set(key, index);
+    });
+  }
+
+  if (orderMap.size === 0) {
+    return labels;
+  }
+
+  return [...labels].sort((a, b) => {
+    const aIndex = orderMap.get(toOptionKey(a));
+    const bIndex = orderMap.get(toOptionKey(b));
+    const aOrder = aIndex ?? Number.MAX_SAFE_INTEGER;
+    const bOrder = bIndex ?? Number.MAX_SAFE_INTEGER;
+    return aOrder - bOrder;
+  });
 }
 
 function parseRecentTradeBlocks(lines) {
