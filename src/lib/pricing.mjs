@@ -396,6 +396,10 @@ function collectObservedTradeValues(trades, key) {
 
 function getTradeValuePatterns(key) {
   const patterns = {
+    plus_x_to_all_resistances: [/^\+?\s*(\d+)\s*To All Resistances$/i],
+    plus_x_to_all_skills: [/^\+?\s*(\d+)\s*To All Skills$/i],
+    plus_x_to_all_attributes: [/^\+?\s*(\d+)\s*To All Attributes$/i],
+    plus_x_percent_to_experience_gained: [/^\+?\s*(\d+)\s*%\s*To Experience Gained$/i],
     plus_x_defense: [/^\+?\s*(\d+)\s*Defense$/i, /^(\d+)\s*Defense$/i],
     plus_x_percent_enhanced_defense: [/^\+?\s*(\d+)\s*%\s*Enhanced Defense$/i],
     plus_x_percent_faster_cast_rate: [/^\+?\s*(\d+)\s*%\s*Faster Cast Rate$/i],
@@ -430,6 +434,10 @@ function toOptionKey(label) {
 function toDisplayOptionKey(label) {
   const normalized = toOptionKey(label);
   const localized = {
+    plus_x_to_all_resistances: "모든 저항",
+    plus_x_to_all_skills: "모든 기술",
+    plus_x_to_all_attributes: "모든 능력치",
+    plus_x_percent_to_experience_gained: "경험치 획득",
     plus_x_defense: "추가 방어력",
     plus_x_percent_enhanced_defense: "방어력 증가",
     plus_x_percent_faster_cast_rate: "시전 속도 증가",
