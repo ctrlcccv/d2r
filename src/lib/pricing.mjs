@@ -934,12 +934,12 @@ function summarizePrices(prices) {
   }
 
   const sorted = prices.slice().sort((a, b) => a.value - b.value);
-  const median = sorted[Math.floor(sorted.length / 2)];
+  const topMatch = prices[0];
   const low = sorted[0];
   const high = sorted[sorted.length - 1];
 
   return {
-    suggestedListPrice: median.label,
+    suggestedListPrice: topMatch.label,
     range: `${low.label} - ${high.label}`,
     sampleSize: prices.length
   };
