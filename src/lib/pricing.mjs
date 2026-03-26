@@ -58,6 +58,8 @@ export function buildRecommendationFromExport(exportedPage, item) {
   const prices = scored
     .map(({ trade }) => normalizePrice(trade.priceText))
     .filter(Boolean);
+  const recommendation = summarizePrices(prices);
+  const topTrade = scored[0]?.trade || null;
 
   return {
     meta: {
@@ -67,7 +69,10 @@ export function buildRecommendationFromExport(exportedPage, item) {
     },
     item,
     matchCount: scored.length,
-    recommendation: summarizePrices(prices),
+    recommendation: {
+      ...recommendation,
+      suggestedListPriceText: topTrade?.priceText || null
+    },
     matches: scored
   };
 }

@@ -92,7 +92,7 @@ function renderResult(result) {
   matches.classList.remove("hidden");
 
   summary.innerHTML = [
-    card("추천 등록가", formatRecommendationPrice(result.recommendation.suggestedListPrice)),
+    card("추천 등록가", formatRecommendationPrice(result.recommendation)),
     card("관측 범위", formatRecommendationRange(result.recommendation.range)),
     card("비교 표본", `${result.recommendation.sampleSize || 0}건`)
   ].join("");
@@ -178,7 +178,12 @@ function isNumericOptionKey(key) {
   ].includes(String(key || "").trim());
 }
 
-function formatRecommendationPrice(label) {
+function formatRecommendationPrice(recommendation) {
+  if (recommendation?.suggestedListPriceText) {
+    return formatTradePriceText(recommendation.suggestedListPriceText);
+  }
+
+  const label = recommendation?.suggestedListPrice;
   if (!label) {
     return "판단 보류";
   }
