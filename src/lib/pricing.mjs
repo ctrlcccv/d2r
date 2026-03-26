@@ -406,7 +406,7 @@ function collectObservedTradeValues(trades, key) {
   }
 
   for (const trade of trades) {
-    for (const line of [trade.itemText, ...(trade.context || [])]) {
+    for (const line of getTradeItemLines(trade)) {
       const text = String(line || "").trim();
       for (const pattern of patterns) {
         const match = text.match(pattern);
@@ -420,6 +420,17 @@ function collectObservedTradeValues(trades, key) {
   }
 
   return values;
+}
+
+function getTradeItemLines(trade) {
+  const context = Array.isArray(trade?.context) ? trade.context : [];
+  const tradingForIndex = context.findIndex((entry) => /^trading for$/i.test(String(entry).trim()));
+  const itemSide = tradingForIndex === -1 ? context : context.slice(0, tradingForIndex);
+
+  return Array.from(new Set([
+    trade?.itemText,
+    ...itemSide
+  ].map((entry) => String(entry || "").trim()).filter(Boolean)));
 }
 
 function getTradeValuePatterns(key) {
@@ -572,7 +583,7 @@ function pickRepresentativeItemText(trade) {
 }
 
 function scoreTradeSimilarity(item, trade) {
-  const haystack = `${trade.itemText} ${trade.context.join(" ")}`.toLowerCase();
+  const haystack = getTradeItemLines(trade).join(" ").toLowerCase();
   let total = 0;
   const matched = [];
   const nearby = [];
