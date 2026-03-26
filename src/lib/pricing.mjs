@@ -592,6 +592,8 @@ function scoreTradeSimilarity(item, trade) {
   let matchedOptionCount = 0;
   let nearbyOptionCount = 0;
   let mismatchedOptionCount = 0;
+  let comparedOptionCount = 0;
+  let totalOptionDistance = 0;
 
   if (item.name && haystack.includes(String(item.name).toLowerCase())) {
     total += 40;
@@ -608,6 +610,10 @@ function scoreTradeSimilarity(item, trade) {
     }
     const comparison = evaluateOptionMatch(key, expectedText, trade, haystack);
     total += comparison.scoreDelta;
+    if (comparison.distance !== null) {
+      comparedOptionCount += 1;
+      totalOptionDistance += comparison.distance;
+    }
 
     if (comparison.status === "match") {
       matchedOptionCount += 1;
@@ -640,6 +646,8 @@ function scoreTradeSimilarity(item, trade) {
     matchedOptionCount,
     nearbyOptionCount,
     mismatchedOptionCount,
+    comparedOptionCount,
+    totalOptionDistance,
     tradeQuantity,
     quantityDiff
   };
@@ -652,7 +660,7 @@ function evaluateOptionMatch(key, expectedText, trade, haystack) {
     const normalizedExpected = normalizeObservedValue(expectedText);
     const values = Array.from(observedValues);
     if (values.some((value) => value === normalizedExpected)) {
-      return { status: "match", scoreDelta: 18, closestValue: normalizedExpected };
+      return { status: "match", scoreDelta: 18, closestValue: normalizedExpected, distance: 0 };
     }
 
     if (/^\d+$/.test(normalizedExpected) && values.every((value) => /^\d+$/.test(value))) {
@@ -664,22 +672,24 @@ function evaluateOptionMatch(key, expectedText, trade, haystack) {
       const diff = Math.abs(closestValue - expectedNumber);
       if (diff <= 5) {
         const scoreDelta = Math.max(2, 15 - (diff * 3));
-        return { status: "near", scoreDelta, closestValue: String(closestValue) };
+        return { status: "near", scoreDelta, closestValue: String(closestValue), distance: diff };
       }
+
+      return { status: "mismatch", scoreDelta: -8, closestValue: String(closestValue), distance: diff };
     }
 
-    return { status: "mismatch", scoreDelta: -8, closestValue: null };
+    return { status: "mismatch", scoreDelta: -8, closestValue: null, distance: 10 };
   }
 
   if (/^\d+$/.test(String(expectedText).trim())) {
-    return { status: "unknown", scoreDelta: 0, closestValue: null };
+    return { status: "unknown", scoreDelta: 0, closestValue: null, distance: null };
   }
 
   if (haystack.includes(expectedText.toLowerCase())) {
-    return { status: "match", scoreDelta: 18, closestValue: expectedText };
+    return { status: "match", scoreDelta: 18, closestValue: expectedText, distance: 0 };
   }
 
-  return { status: "unknown", scoreDelta: 0, closestValue: null };
+  return { status: "unknown", scoreDelta: 0, closestValue: null, distance: null };
 }
 
 function normalizeOptionLookupKey(key) {
@@ -723,16 +733,24 @@ function compareTradeScores(a, b, requestedQuantity) {
     }
   }
 
+  if (a.score.comparedOptionCount !== b.score.comparedOptionCount) {
+    return b.score.comparedOptionCount - a.score.comparedOptionCount;
+  }
+
+  if (a.score.totalOptionDistance !== b.score.totalOptionDistance) {
+    return a.score.totalOptionDistance - b.score.totalOptionDistance;
+  }
+
+  if (a.score.mismatchedOptionCount !== b.score.mismatchedOptionCount) {
+    return a.score.mismatchedOptionCount - b.score.mismatchedOptionCount;
+  }
+
   if (a.score.matchedOptionCount !== b.score.matchedOptionCount) {
     return b.score.matchedOptionCount - a.score.matchedOptionCount;
   }
 
   if (a.score.nearbyOptionCount !== b.score.nearbyOptionCount) {
     return b.score.nearbyOptionCount - a.score.nearbyOptionCount;
-  }
-
-  if (a.score.mismatchedOptionCount !== b.score.mismatchedOptionCount) {
-    return a.score.mismatchedOptionCount - b.score.mismatchedOptionCount;
   }
 
   return b.score.total - a.score.total;
