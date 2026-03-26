@@ -731,6 +731,12 @@ function compareTradeScores(a, b, requestedQuantity) {
     if (diffA !== diffB) {
       return diffA - diffB;
     }
+  } else {
+    const rankA = getDefaultQuantityRank(a.trade);
+    const rankB = getDefaultQuantityRank(b.trade);
+    if (rankA !== rankB) {
+      return rankA - rankB;
+    }
   }
 
   if (a.score.comparedOptionCount !== b.score.comparedOptionCount) {
@@ -754,6 +760,26 @@ function compareTradeScores(a, b, requestedQuantity) {
   }
 
   return b.score.total - a.score.total;
+}
+
+function getDefaultQuantityRank(trade) {
+  const quantity = extractTradeQuantity(trade) ?? Number.POSITIVE_INFINITY;
+  const context = Array.isArray(trade?.context) ? trade.context : [];
+  const isUnidentified = context.some((entry) => /^unidentified$/i.test(String(entry).trim()));
+
+  if (quantity === 1 && !isUnidentified) {
+    return 0;
+  }
+
+  if (quantity === 1 && isUnidentified) {
+    return 1;
+  }
+
+  if (quantity > 1 && !isUnidentified) {
+    return 2;
+  }
+
+  return 3;
 }
 
 function parseRequestedQuantity(options) {
