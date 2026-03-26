@@ -575,9 +575,11 @@ function scoreTradeSimilarity(item, trade) {
   const haystack = `${trade.itemText} ${trade.context.join(" ")}`.toLowerCase();
   let total = 0;
   const matched = [];
+  const nearby = [];
   const mismatched = [];
   const tradeQuantity = extractTradeQuantity(trade);
   let matchedOptionCount = 0;
+  let nearbyOptionCount = 0;
   let mismatchedOptionCount = 0;
 
   if (item.name && haystack.includes(String(item.name).toLowerCase())) {
@@ -593,16 +595,22 @@ function scoreTradeSimilarity(item, trade) {
     if (!expectedText.trim()) {
       continue;
     }
-    const matchState = getOptionMatchState(key, expectedText, trade, haystack);
-    if (matchState === "match") {
-      total += 18;
+    const comparison = evaluateOptionMatch(key, expectedText, trade, haystack);
+    total += comparison.scoreDelta;
+
+    if (comparison.status === "match") {
       matchedOptionCount += 1;
       matched.push(`${key}:${expected}`);
       continue;
     }
 
-    if (matchState === "mismatch") {
-      total -= 8;
+    if (comparison.status === "near") {
+      nearbyOptionCount += 1;
+      nearby.push(`${key}:${expected}~${comparison.closestValue}`);
+      continue;
+    }
+
+    if (comparison.status === "mismatch") {
       mismatchedOptionCount += 1;
       mismatched.push(`${key}:${expected}`);
     }
@@ -613,22 +621,54 @@ function scoreTradeSimilarity(item, trade) {
     ? Math.abs(tradeQuantity - requestedQuantity)
     : null;
 
-  return { total, matched, mismatched, matchedOptionCount, mismatchedOptionCount, tradeQuantity, quantityDiff };
+  return {
+    total,
+    matched,
+    nearby,
+    mismatched,
+    matchedOptionCount,
+    nearbyOptionCount,
+    mismatchedOptionCount,
+    tradeQuantity,
+    quantityDiff
+  };
 }
 
-function getOptionMatchState(key, expectedText, trade, haystack) {
+function evaluateOptionMatch(key, expectedText, trade, haystack) {
   const normalizedKey = normalizeOptionLookupKey(key);
   const observedValues = collectObservedTradeValues([trade], normalizedKey);
   if (observedValues.size > 0) {
     const normalizedExpected = normalizeObservedValue(expectedText);
-    return Array.from(observedValues).some((value) => value === normalizedExpected) ? "match" : "mismatch";
+    const values = Array.from(observedValues);
+    if (values.some((value) => value === normalizedExpected)) {
+      return { status: "match", scoreDelta: 18, closestValue: normalizedExpected };
+    }
+
+    if (/^\d+$/.test(normalizedExpected) && values.every((value) => /^\d+$/.test(value))) {
+      const expectedNumber = Number.parseInt(normalizedExpected, 10);
+      const closestValue = values
+        .map((value) => Number.parseInt(value, 10))
+        .sort((a, b) => Math.abs(a - expectedNumber) - Math.abs(b - expectedNumber))[0];
+
+      const diff = Math.abs(closestValue - expectedNumber);
+      if (diff <= 5) {
+        const scoreDelta = Math.max(2, 15 - (diff * 3));
+        return { status: "near", scoreDelta, closestValue: String(closestValue) };
+      }
+    }
+
+    return { status: "mismatch", scoreDelta: -8, closestValue: null };
   }
 
   if (/^\d+$/.test(String(expectedText).trim())) {
-    return "unknown";
+    return { status: "unknown", scoreDelta: 0, closestValue: null };
   }
 
-  return haystack.includes(expectedText.toLowerCase()) ? "match" : "unknown";
+  if (haystack.includes(expectedText.toLowerCase())) {
+    return { status: "match", scoreDelta: 18, closestValue: expectedText };
+  }
+
+  return { status: "unknown", scoreDelta: 0, closestValue: null };
 }
 
 function normalizeOptionLookupKey(key) {
@@ -674,6 +714,10 @@ function compareTradeScores(a, b, requestedQuantity) {
 
   if (a.score.matchedOptionCount !== b.score.matchedOptionCount) {
     return b.score.matchedOptionCount - a.score.matchedOptionCount;
+  }
+
+  if (a.score.nearbyOptionCount !== b.score.nearbyOptionCount) {
+    return b.score.nearbyOptionCount - a.score.nearbyOptionCount;
   }
 
   if (a.score.mismatchedOptionCount !== b.score.mismatchedOptionCount) {
