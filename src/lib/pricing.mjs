@@ -360,7 +360,7 @@ function parseRecentTradeBlocks(lines) {
       continue;
     }
 
-    if (/^Trading For$/i.test(line)) {
+    if (/^(Trading For|I Give)$/i.test(line)) {
       current.expectPrice = true;
       current.expectAlternatePrice = false;
       continue;
@@ -464,6 +464,7 @@ function getTradeValuePatterns(key) {
 }
 
 const TRADE_VALUE_PATTERNS = {
+  socketed_x: [/^Socketed\s*\((\d+)\)$/i],
   plus_x_to_all_resistances: [/^\+?\s*(\d+)\s*To All Resistances$/i],
   plus_x_to_all_skills: [/^\+?\s*(\d+)\s*To All Skills$/i],
   plus_x_to_all_attributes: [/^\+?\s*(\d+)\s*To All Attributes$/i],
@@ -499,6 +500,7 @@ function toOptionKey(label) {
 function toDisplayOptionKey(label) {
   const normalized = toOptionKey(label);
   const localized = {
+    socketed_x: "소켓",
     plus_x_to_all_resistances: "모든 저항",
     plus_x_to_all_skills: "모든 기술",
     plus_x_to_all_attributes: "모든 능력치",
@@ -725,6 +727,7 @@ function normalizeOptionLookupKey(key) {
     "모든 기술": "plus_x_to_all_skills",
     "모든 능력치": "plus_x_to_all_attributes",
     "경험치 획득": "plus_x_percent_to_experience_gained",
+    "소켓": "socketed_x",
     "추가 방어력": "plus_x_defense",
     "방어력 증가": "plus_x_percent_enhanced_defense",
     "시전 속도 증가": "plus_x_percent_faster_cast_rate",
@@ -1007,7 +1010,11 @@ function isNoiseLine(line) {
     return true;
   }
 
-  return !detectPriceToken(text) && !/^\d+\s*X\s+/.test(text);
+  if (detectPriceToken(text) || /^\d+\s*X\s+/.test(text) || looksLikeTradeDetailLine(text)) {
+    return false;
+  }
+
+  return true;
 }
 
 function isTradePriceIgnoreLine(line) {
@@ -1042,4 +1049,23 @@ function isTradeEndLine(line) {
   }
 
   return false;
+}
+
+function looksLikeTradeDetailLine(line) {
+  const text = String(line).trim();
+  if (!text) {
+    return false;
+  }
+
+  if (/^(ethereal|unidentified)$/i.test(text)) {
+    return true;
+  }
+
+  if (/^\d+\s*%\s*Increase Maximum Durability$/i.test(text)) {
+    return true;
+  }
+
+  return Object.values(TRADE_VALUE_PATTERNS).some((patterns) => (
+    patterns.some((pattern) => pattern.test(text))
+  ));
 }
