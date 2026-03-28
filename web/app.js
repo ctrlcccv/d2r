@@ -234,24 +234,32 @@ function formatTradeDetailText(trade, itemName) {
 
 function extractTradeDetails(trade, itemName) {
   const normalizedName = String(itemName || "").trim().toLowerCase();
-  const context = trade?.context || [];
-  const tradingForIndex = context.findIndex((entry) => /^trading for$/i.test(String(entry).trim()));
-  const detailSource = tradingForIndex === -1 ? context : context.slice(0, tradingForIndex);
+  const context = (trade?.context || []).map((entry) => normalizeTradeDetailEntry(entry)).filter(Boolean);
+  const priceStartIndex = context.findIndex((entry) => /(?:^|\b)(trading for|i give)(?:\b|$)/i.test(entry));
+  const detailSource = priceStartIndex === -1 ? context : context.slice(0, priceStartIndex);
 
   return Array.from(new Set(detailSource
-    .map((entry) => String(entry || "").trim())
-    .filter(Boolean)
     .filter((entry) => {
       const lower = entry.toLowerCase();
       return lower !== `1 x ${normalizedName}`
         && lower !== normalizedName
         && !/^or$/i.test(entry)
+        && !/^they give$/i.test(entry)
         && !/^high rune value:/i.test(entry)
         && !/^additional item/i.test(entry)
         && !/\d+\s*(분|시간|일)\s*전/.test(entry)
         && !/^\d+\s*x\s+/.test(entry)
         && !/^(pc|softcore|ladder|reign of the warlock|americas|asia|europe)$/i.test(entry);
     })));
+}
+
+function normalizeTradeDetailEntry(entry) {
+  return String(entry || "")
+    .replace(/\u00a0/g, " ")
+    .replace(/•/g, "")
+    .replace(/\b(?:Trading For|I Give)\b[\s\S]*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function escapeHtml(value) {
