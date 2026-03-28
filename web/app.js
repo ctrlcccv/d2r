@@ -254,12 +254,17 @@ function extractTradeDetails(trade, itemName) {
 }
 
 function normalizeTradeDetailEntry(entry) {
-  return String(entry || "")
+  const text = String(entry || "")
     .replace(/\u00a0/g, " ")
     .replace(/•/g, "")
-    .replace(/\b(?:Trading For|I Give)\b[\s\S]*$/i, "")
     .replace(/\s+/g, " ")
     .trim();
+
+  if (/^(Trading For|I Give)$/i.test(text)) {
+    return text;
+  }
+
+  return text.replace(/\b(?:Trading For|I Give)\b[\s\S]*$/i, "").trim();
 }
 
 function escapeHtml(value) {
