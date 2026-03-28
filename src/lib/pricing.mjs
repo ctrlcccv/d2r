@@ -205,11 +205,32 @@ function inferVariableStatLabels(lines, labels, trades) {
     return isEditableStatLabel(label) && observedValues.size > 1;
   });
 
-  if (variableLabels.some((label) => toOptionKey(label) === "defense")) {
-    return variableLabels.filter((label) => toOptionKey(label) !== "plus_x_defense");
+  const inferredTradeLabels = inferVariableTradeLabels(lines, trades);
+  const mergedLabels = Array.from(new Set([
+    ...variableLabels,
+    ...inferredTradeLabels
+  ]));
+
+  if (mergedLabels.some((label) => toOptionKey(label) === "defense")) {
+    return mergedLabels.filter((label) => toOptionKey(label) !== "plus_x_defense");
   }
 
-  return variableLabels;
+  return mergedLabels;
+}
+
+function inferVariableTradeLabels(lines, trades) {
+  const labels = [];
+
+  for (const key of Object.keys(TRADE_VALUE_PATTERNS)) {
+    const observedValues = collectObservedTradeValues(trades, key);
+    const hasRangeHint = hasVariableRangeHint(lines, key);
+
+    if (hasRangeHint || observedValues.size > 1) {
+      labels.push(key);
+    }
+  }
+
+  return labels;
 }
 
 function sortTemplateLabels(itemName, labels) {
@@ -439,27 +460,27 @@ function getTradeItemLines(trade) {
 }
 
 function getTradeValuePatterns(key) {
-  const patterns = {
-    plus_x_to_all_resistances: [/^\+?\s*(\d+)\s*To All Resistances$/i],
-    plus_x_to_all_skills: [/^\+?\s*(\d+)\s*To All Skills$/i],
-    plus_x_to_all_attributes: [/^\+?\s*(\d+)\s*To All Attributes$/i],
-    plus_x_percent_to_experience_gained: [/^\+?\s*(\d+)\s*%\s*To Experience Gained$/i],
-    plus_x_defense: [/^\+?\s*(\d+)\s*Defense$/i, /^(\d+)\s*Defense$/i],
-    plus_x_percent_enhanced_defense: [/^\+?\s*(\d+)\s*%\s*Enhanced Defense$/i],
-    plus_x_percent_faster_cast_rate: [/^\+?\s*(\d+)\s*%\s*Faster Cast Rate$/i],
-    fire_resist_plus_x_percent: [/^Fire Resist\s*\+?\s*(\d+)\s*%$/i, /^\+?\s*(\d+)\s*%\s*Fire Resist$/i],
-    plus_x_percent_increased_attack_speed: [/^\+?\s*(\d+)\s*%\s*Increased Attack Speed$/i],
-    plus_x_percent_damage_to_demons: [/^\+?\s*(\d+)\s*%\s*Damage To Demons$/i],
-    x_percent_chance_to_cast_level_x_holy_bolt_on_striking: [/^(\d+)\s*%\s*Chance to cast level\s*(\d+)\s*Holy Bolt on striking$/i],
-    x_fire_damage: [/^(\d+)\s*Fire Damage$/i],
-    regenerate_mana_x_percent: [/^Regenerate Mana\s*(\d+)\s*%$/i],
-    plus_x_to_fire_skills: [/^\+?\s*(\d+)\s*To Fire Skills$/i],
-    required_level_x: [/^Required Level\s*(\d+)$/i],
-    defense: [/^Defense:\s*(\d+)(?:\s*-\s*\d+)?$/i, /^\+?\s*(\d+)\s*Defense$/i, /^(\d+)\s*Defense$/i]
-  };
-
-  return patterns[key] || [];
+  return TRADE_VALUE_PATTERNS[key] || [];
 }
+
+const TRADE_VALUE_PATTERNS = {
+  plus_x_to_all_resistances: [/^\+?\s*(\d+)\s*To All Resistances$/i],
+  plus_x_to_all_skills: [/^\+?\s*(\d+)\s*To All Skills$/i],
+  plus_x_to_all_attributes: [/^\+?\s*(\d+)\s*To All Attributes$/i],
+  plus_x_percent_to_experience_gained: [/^\+?\s*(\d+)\s*%\s*To Experience Gained$/i],
+  plus_x_defense: [/^\+?\s*(\d+)\s*Defense$/i, /^(\d+)\s*Defense$/i],
+  plus_x_percent_enhanced_defense: [/^\+?\s*(\d+)\s*%\s*Enhanced Defense$/i],
+  plus_x_percent_faster_cast_rate: [/^\+?\s*(\d+)\s*%\s*Faster Cast Rate$/i],
+  fire_resist_plus_x_percent: [/^Fire Resist\s*\+?\s*(\d+)\s*%$/i, /^\+?\s*(\d+)\s*%\s*Fire Resist$/i],
+  plus_x_percent_increased_attack_speed: [/^\+?\s*(\d+)\s*%\s*Increased Attack Speed$/i],
+  plus_x_percent_damage_to_demons: [/^\+?\s*(\d+)\s*%\s*Damage To Demons$/i],
+  x_percent_chance_to_cast_level_x_holy_bolt_on_striking: [/^(\d+)\s*%\s*Chance to cast level\s*(\d+)\s*Holy Bolt on striking$/i],
+  x_fire_damage: [/^(\d+)\s*Fire Damage$/i],
+  regenerate_mana_x_percent: [/^Regenerate Mana\s*(\d+)\s*%$/i],
+  plus_x_to_fire_skills: [/^\+?\s*(\d+)\s*To Fire Skills$/i],
+  required_level_x: [/^Required Level\s*(\d+)$/i],
+  defense: [/^Defense:\s*(\d+)(?:\s*-\s*\d+)?$/i, /^\+?\s*(\d+)\s*Defense$/i, /^(\d+)\s*Defense$/i]
+};
 
 function toOptionKey(label) {
   return cleanStatLabel(label)
