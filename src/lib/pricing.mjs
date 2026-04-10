@@ -51,15 +51,17 @@ export function buildRecommendationFromExport(exportedPage, item) {
     .map((trade) => ({
       trade,
       score: scoreTradeSimilarity(item, trade)
-    }))
-    .filter((entry) => entry.score.total > 0)
+    }));
+
+  const scoredBySignal = scored.filter((entry) => entry.score.total > 0);
+  const ranked = (scoredBySignal.length > 0 ? scoredBySignal : scored)
     .sort((a, b) => compareTradeScores(a, b, requestedQuantity));
 
-  const prices = scored
+  const prices = ranked
     .map(({ trade }) => normalizePrice(trade.priceText))
     .filter(Boolean);
   const recommendation = summarizePrices(prices);
-  const topTrade = scored[0]?.trade || null;
+  const topTrade = ranked[0]?.trade || null;
 
   return {
     meta: {
@@ -68,12 +70,12 @@ export function buildRecommendationFromExport(exportedPage, item) {
       parsedCount: trades.length
     },
     item,
-    matchCount: scored.length,
+    matchCount: ranked.length,
     recommendation: {
       ...recommendation,
       suggestedListPriceText: topTrade?.priceText || null
     },
-    matches: scored
+    matches: ranked
   };
 }
 
@@ -193,29 +195,37 @@ function extractStatLabels(lines) {
 }
 
 function inferVariableStatLabels(lines, labels, trades) {
-  const variableLabels = labels.filter((label) => {
-    const key = toOptionKey(label);
-    const observedValues = collectObservedTradeValues(trades, key);
-    const hasRangeHint = hasVariableRangeHint(lines, key);
-
-    if (hasRangeHint || observedValues.size > 1) {
-      return true;
-    }
-
-    return isEditableStatLabel(label) && observedValues.size > 1;
-  });
+  const variableLabels = labels.filter((label) => (
+    isEditableStatLabel(label) || hasVariableRangeHint(lines, toOptionKey(label))
+  ));
 
   const inferredTradeLabels = inferVariableTradeLabels(lines, trades);
-  const mergedLabels = Array.from(new Set([
+  const mergedLabels = dedupeLabelsByOptionKey([
     ...variableLabels,
     ...inferredTradeLabels
-  ]));
+  ]);
 
   if (mergedLabels.some((label) => toOptionKey(label) === "defense")) {
     return mergedLabels.filter((label) => toOptionKey(label) !== "plus_x_defense");
   }
 
   return mergedLabels;
+}
+
+function dedupeLabelsByOptionKey(labels) {
+  const deduped = [];
+  const seen = new Set();
+
+  for (const label of labels) {
+    const key = toOptionKey(label);
+    if (!key || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    deduped.push(label);
+  }
+
+  return deduped;
 }
 
 function inferVariableTradeLabels(lines, trades) {
@@ -475,6 +485,10 @@ const TRADE_VALUE_PATTERNS = {
   fire_resist_plus_x_percent: [/^Fire Resist\s*\+?\s*(\d+)\s*%$/i, /^\+?\s*(\d+)\s*%\s*Fire Resist$/i],
   plus_x_percent_increased_attack_speed: [/^\+?\s*(\d+)\s*%\s*Increased Attack Speed$/i],
   plus_x_percent_damage_to_demons: [/^\+?\s*(\d+)\s*%\s*Damage To Demons$/i],
+  plus_x_to_life: [/^\+?\s*(\d+)\s*To Life$/i],
+  plus_x_to_attack_rating: [/^\+?\s*(\d+)\s*To Attack Rating$/i],
+  plus_x_to_dexterity: [/^\+?\s*(\d+)\s*To Dexterity$/i],
+  plus_x_percent_chance_of_crushing_blow: [/^\+?\s*(\d+)\s*%\s*Chance of Crushing Blow$/i],
   x_percent_chance_to_cast_level_x_holy_bolt_on_striking: [/^(\d+)\s*%\s*Chance to cast level\s*(\d+)\s*Holy Bolt on striking$/i],
   x_fire_damage: [/^(\d+)\s*Fire Damage$/i],
   regenerate_mana_x_percent: [/^Regenerate Mana\s*(\d+)\s*%$/i],
@@ -511,6 +525,10 @@ function toDisplayOptionKey(label) {
     fire_resist_plus_x_percent: "화염 저항",
     plus_x_percent_increased_attack_speed: "공격 속도 증가",
     plus_x_percent_damage_to_demons: "악마에게 주는 피해",
+    plus_x_to_life: "생명력",
+    plus_x_to_attack_rating: "명중률",
+    plus_x_to_dexterity: "민첩",
+    plus_x_percent_chance_of_crushing_blow: "강타 확률",
     x_percent_chance_to_cast_level_x_holy_bolt_on_striking: "타격 시 레벨 홀리 볼트 시전 확률",
     knockback: "적을 밀쳐냄",
     x_fire_damage: "화염 피해",
@@ -734,6 +752,10 @@ function normalizeOptionLookupKey(key) {
     "화염 저항": "fire_resist_plus_x_percent",
     "공격 속도 증가": "plus_x_percent_increased_attack_speed",
     "악마에게 주는 피해": "plus_x_percent_damage_to_demons",
+    "생명력": "plus_x_to_life",
+    "명중률": "plus_x_to_attack_rating",
+    "민첩": "plus_x_to_dexterity",
+    "강타 확률": "plus_x_percent_chance_of_crushing_blow",
     "타격 시 레벨 홀리 볼트 시전 확률": "x_percent_chance_to_cast_level_x_holy_bolt_on_striking",
     "적을 밀쳐냄": "knockback",
     "화염 피해": "x_fire_damage",
