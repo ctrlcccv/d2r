@@ -58,6 +58,29 @@ body {
   margin-top: 22px;
 }
 
+.quick-links {
+  margin-top: 18px;
+}
+
+.quick-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 178, 119, 0.36);
+  background: rgba(212, 178, 119, 0.12);
+  color: #f7dfb8;
+  text-decoration: none;
+  font-weight: 700;
+  transition: filter 140ms ease, transform 140ms ease;
+}
+
+.quick-link:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+
 .chip {
   padding: 10px 15px;
   border-radius: 999px;
@@ -300,5 +323,10 @@ strong {
   .panel-head {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .quick-link {
+    width: 100%;
+    justify-content: center;
   }
 }
