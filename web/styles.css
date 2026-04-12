@@ -289,6 +289,44 @@ h2 {
   gap: 16px;
 }
 
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.price-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 780px;
+  background: #1b2026;
+}
+
+.price-table th,
+.price-table td {
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+
+.price-table th {
+  background: #232930;
+  color: #f2f4f7;
+  font-size: 14px;
+}
+
+.price-table td {
+  color: #d9dee4;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.price-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
 .hidden {
   display: none;
 }
@@ -328,5 +366,9 @@ strong {
   .quick-link {
     width: 100%;
     justify-content: center;
+  }
+
+  .price-table {
+    min-width: 620px;
   }
 }
